@@ -198,14 +198,21 @@ function buildRow(payload) {
 }
 
 function saveImageFile(payload) {
-  const matches = String(payload.fileData || "").match(/^data:(.+);base64,(.+)$/);
+  // Form-encoded submissions can sometimes introduce whitespace in base64.
+  const raw = String(payload.fileData || "").trim();
+  const matches = raw.match(/^data:(.+);base64,(.+)$/);
 
   if (!matches) {
     throw new Error("Invalid image data");
   }
 
   const contentType = payload.fileType || matches[1];
-  const bytes = Utilities.base64Decode(matches[2]);
+  // Best-effort repair for base64 where '+' may have been turned into spaces.
+  let base64 = matches[2];
+  base64 = base64.replace(/ /g, "+");
+  base64 = base64.replace(/\s/g, "");
+
+  const bytes = Utilities.base64Decode(base64);
   const blob = Utilities.newBlob(bytes, contentType, payload.fileName || "upload-image");
   const file = DriveApp.createFile(blob);
 
