@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Verify Certificate - IOTIFY</title>
+
+<!-- Google Font -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;600&display=swap" rel="stylesheet">
+
+<!-- CSS -->
+<link rel="stylesheet" href="style.css">
+
+<!-- QR Scanner -->
+<script src="https://unpkg.com/html5-qrcode"></script>
+
+</head>
+
+<body>
+
+<!-- BACKGROUND -->
+<canvas id="bg"></canvas>
+
+<!-- NAVBAR -->
+<nav>
+    <h1>IOTIFY</h1>
+    <button onclick="goHome()">Home</button>
+</nav>
+
+<!-- VERIFY SECTION -->
+<section class="section">
+
+    <div class="verify-container">
+
+        <!-- CLOSE BUTTON -->
+        <button class="close-btn" onclick="goHome()">✖</button>
+
+        <h1 class="verify-title">Verify Certificate</h1>
+
+        <!-- INPUT FORM -->
+        <div class="form-box">
+            <input type="text" id="verifyName" placeholder="Enter Name">
+            <input type="text" id="verifyId" placeholder="Enter ID">
+            <button onclick="verifyCertificate()">Verify</button>
+        </div>
+
+        <p class="or">OR</p>
+
+        <!-- QR BUTTON -->
+        <button class="scan-btn" onclick="scanQR()">📷 Scan QR</button>
+
+        <!-- QR READER -->
+        <div id="qr-reader" style="display:none; margin-top:15px;"></div>
+
+        <!-- SWITCH CAMERA -->
+        <div style="text-align:center; margin-top:10px;">
+            <button class="switch-btn" onclick="switchCamera()">🔄 Switch Camera</button>
+        </div>
+
+        <!-- RESULT -->
+        <div id="verifyResult"></div>
+
+    </div>
+
+</section>
+
+<!-- SCRIPT -->
+<script src="script.js"></script>
+
+</body>
+</html>

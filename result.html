@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Certificate Result - IOTIFY</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;600&display=swap" rel="stylesheet">
+
+<style>
+
+/* RESET */
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:'Poppins',sans-serif;
+}
+
+/* BODY */
+body{
+    background: radial-gradient(circle at top, #0f2027, #0a0a0f 60%);
+    color:white;
+    overflow-x:hidden;
+}
+
+/* NAV */
+nav{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:20px 40px;
+}
+
+nav h1{
+    color:#00f7ff;
+}
+
+nav button{
+    padding:10px 20px;
+    border:none;
+    border-radius:20px;
+    background:linear-gradient(45deg,#00f7ff,#8a2be2);
+    color:white;
+    cursor:pointer;
+}
+
+/* RESULT CONTAINER */
+.result-box{
+    max-width:600px;
+    margin:80px auto;
+    padding:20px;
+}
+
+/* CARD */
+.result-card{
+    padding:25px;
+    border-radius:25px;
+    background:rgba(255,255,255,0.05);
+    backdrop-filter:blur(20px);
+    text-align:center;
+    box-shadow:0 0 40px rgba(0,247,255,0.2);
+}
+
+/* SUCCESS */
+.success{
+    border:1px solid #00ffae;
+}
+
+.verified-badge{
+    background:#00ffae;
+    color:black;
+    padding:5px 15px;
+    border-radius:20px;
+    font-weight:600;
+}
+
+/* FAIL */
+.fail{
+    border:1px solid #ff4d4d;
+}
+
+.fail-badge{
+    background:#ff4d4d;
+    padding:6px 16px;
+    border-radius:20px;
+}
+
+/* IFRAME */
+iframe{
+    margin-top:15px;
+    border-radius:10px;
+    border:none;
+}
+
+.loading{
+    text-align:center;
+    margin-top:100px;
+    font-size:20px;
+}
+
+</style>
+</head>
+
+<body>
+
+<nav>
+    <h1>IOTIFY</h1>
+    <button onclick="goHome()">Home</button>
+</nav>
+
+<section class="result-box" id="resultBox">
+    <div class="loading">🔄 Verifying Certificate...</div>
+</section>
+
+<script>
+
+// 🔙 HOME
+function goHome(){
+    window.location.href = "index.html";
+}
+
+// 🚀 MAIN LOGIC
+window.onload = async function(){
+
+    const box = document.getElementById("resultBox");
+
+    const params = new URLSearchParams(window.location.search);
+    const encoded = params.get("data");
+
+    if(!encoded){
+        showError("❌ No QR data found");
+        return;
+    }
+
+    let decoded;
+
+    try{
+        decoded = atob(encoded);
+    }catch{
+        showError("❌ Invalid QR format");
+        return;
+    }
+
+    const parts = decoded.split("|");
+
+    if(parts.length !== 2){
+        showError("❌ Invalid QR structure");
+        return;
+    }
+
+    const name = parts[0].trim().toLowerCase();
+    const id = parts[1].trim().toLowerCase();
+
+    console.log("Searching:", name, id);
+
+    const url = "https://opensheet.elk.sh/188kV2CseK37tFy5R1tUYm6AZjL9k1Y71i64Jqra1dFQ/Sheet1";
+
+    try{
+
+        const res = await fetch(url);
+
+        if(!res.ok){
+            throw new Error("Sheet not reachable");
+        }
+
+        const data = await res.json();
+
+        const user = data.find(r => {
+
+            const sheetName = String(r.Name || "").trim().toLowerCase();
+            const sheetId = String(r.ID || r["ID "] || "").trim().toLowerCase();
+
+            return sheetName === name && sheetId === id;
+        });
+
+        if(!user){
+            showError("❌ Certificate Not Found");
+            return;
+        }
+
+        renderResult(user);
+
+    }catch(err){
+        console.error(err);
+        showError("❌ Failed to connect to database");
+    }
+};
+
+// ✅ SHOW RESULT
+function renderResult(user){
+
+    let certLink = user.Link || "";
+
+    if(certLink.includes("drive")){
+        certLink = certLink.replace("/view","/preview");
+    }
+
+    document.getElementById("resultBox").innerHTML = `
+    <div class="result-card success">
+
+        <span class="verified-badge">✔ VERIFIED</span>
+
+        <h2>${user.Name}</h2>
+        <p>ID: ${user.ID || user["ID "]}</p>
+
+        <p><b>Event:</b> ${user.Event}</p>
+        <p><b>Date:</b> ${user.Date}</p>
+
+        <iframe src="${certLink}" width="100%" height="400"></iframe>
+
+    </div>`;
+}
+
+// ❌ ERROR UI
+function showError(msg){
+
+    document.getElementById("resultBox").innerHTML = `
+    <div class="result-card fail">
+
+        <span class="fail-badge">✖ NOT VERIFIED</span>
+
+        <h2>${msg}</h2>
+
+        <p>Please check your QR or contact admin.</p>
+
+    </div>`;
+}
+
+</script>
+
+</body>
+</html>

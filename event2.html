@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IoT Competition - IOTIFY</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<canvas id="bg"></canvas>
+
+<nav>
+    <h1 style="cursor:pointer" onclick="goHome()">IOTIFY</h1>
+    <button onclick="goHome()">Home</button>
+</nav>
+
+<section class="event-hero">
+
+    <div class="event-left">
+        <h1>IoT Competition 2026</h1>
+        <p class="tagline">Showcase Your Innovation.</p>
+
+        <div class="event-badges">
+            <span>📍 Main Auditorium</span>
+            <span>📅 April 17, 2026</span>
+            <span class="status" style="background: #8a2be2 !important; color: white;">🚀 Upcoming</span>
+        </div>
+
+        <p class="desc">
+            Participate in the ultimate IoT challenge. Build, present, and compete 
+            with the best minds to solve real-world problems using smart automation 
+            and hardware-software integration.
+        </p>
+
+        <button class="register-btn" style="margin-top: 25px; padding: 15px 40px; font-weight: 600;" onclick="openPopup()">
+            Register Now
+        </button>
+
+        <button class="register-btn" style="margin-top: 15px; padding: 15px 40px; font-weight: 600; background:linear-gradient(45deg,#8a2be2,#00f7ff);" onclick="openRulesPopup()">
+            Rules
+        </button>
+    </div>
+
+    <div class="event-right">
+        <img src="competition-poster.png" class="hero-img" alt="IoT Competition Poster">
+    </div>
+
+</section>
+
+<section class="details-section">
+
+    <div class="info-card prize-glow">
+        <h3 style="text-align:center; font-size:24px; color:#00f5ff;">🏆 Prize Pool</h3>
+        <p class="prize-total">Total Prize Pool: <span>₹10,000</span></p>
+        <ul class="prize-list" style="margin-top:15px; list-style-type: none;">
+            <li style="margin-bottom:10px;">🥇 1st Prize: <span class="prize-amount">₹000</span></li>
+            <li style="margin-bottom:10px;">🥈 2nd Prize: <span class="prize-amount">₹000</span></li>
+        </ul>
+        <p class="prize-certificate" style="margin-top:15px;">🎖 Innovation Certificate for Teams</p>
+    </div>
+
+    <div class="info-card">
+        <h3 style="text-align:center; font-size:24px; color:#00f5ff;">🎯 About Event</h3>
+        <p style="margin-top:15px; opacity:0.8;">
+            Teams of 1 to 4 members are required to present working prototypes. The projects should align with themes such as Sustainable Development and Open Innovation.
+            Entries will be evaluated based on innovation, design quality, and feasibility.
+        </p>
+    </div>
+
+    <div class="info-card">
+        <h3 style="text-align:center; font-size:24px; color:#00f5ff;">🏫 Details</h3>
+        <div style="margin-top:15px;">
+            <p><b>Venue:</b> SIT Main Auditorium</p>
+            <p><b>Date:</b> April 30, 2026</p>
+            <p><b>Dept:</b> Information Science & Engineering (ISE)</p>
+        </div>
+    </div>
+
+</section>
+
+<div class="modal" id="popup" style="display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); justify-content: center; align-items: center;">
+    <div class="modal-content" style="background: #111; padding: 40px; border-radius: 25px; border: 1px solid #00f7ff; text-align: center; max-width: 400px; position: relative;">
+        <span class="close-btn" onclick="closePopup()" style="position: absolute; top: 15px; right: 20px; font-size: 25px; cursor: pointer;">&times;</span>
+        <h2 style="color: #00f7ff; margin-bottom: 15px;">Ready to Innovate?</h2>
+        <p style="opacity: 0.8; margin-bottom: 25px;">Join the IoT competition and win exciting prizes. Your registration starts here!</p>
+        <button class="register-btn" onclick="goToRegister()" style="width: 100%; padding: 12px;">Proceed to Form</button>
+    </div>
+</div>
+
+<div class="modal" id="rulesPopup" style="display: none; position: fixed; z-index: 2001; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); justify-content: center; align-items: center;">
+    <div class="modal-content" style="background: #111; padding: 35px; border-radius: 25px; border: 1px solid #00f7ff; text-align: center; max-width: 430px; position: relative;">
+        <span class="close-btn" onclick="closeRulesPopup()" style="position: absolute; top: 15px; right: 20px; font-size: 25px; cursor: pointer;">&times;</span>
+        <h2 style="color: #00f7ff; margin-bottom: 15px;">Rules</h2>
+        <ul style="margin-top:15px; list-style-type: none; text-align: left; padding-left: 0;">
+            <li style="margin-bottom:10px; opacity:0.9;">• Team size: 2 to 4 members</li>
+            <li style="margin-bottom:10px; opacity:0.9;">• Submit a working IoT/prototype aligned with the chosen theme</li>
+            <li style="margin-bottom:10px; opacity:0.9;">• Innovation Certificate will be awarded to qualifying teams</li>
+            <li style="margin-bottom:0; opacity:0.9;">• Follow instructions on the registration form for payment & upload</li>
+        </ul>
+        <button class="register-btn" onclick="closeRulesPopup()" style="width: 100%; padding: 12px; margin-top: 18px;">Got it</button>
+    </div>
+</div>
+
+<script src="script.js"></script>
+<script>
+function openRulesPopup(){
+    document.getElementById("rulesPopup").style.display = "flex";
+}
+
+function closeRulesPopup(){
+    document.getElementById("rulesPopup").style.display = "none";
+}
+</script>
+
+</body>
+</html>

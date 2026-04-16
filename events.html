@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Events</title>
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<canvas id="bg"></canvas>
+
+<nav>
+    <h1>IOTIFY</h1>
+    <button onclick="goHome()">Home</button>
+</nav>
+
+<section class="section">
+    <h2>Our Events</h2>
+
+    <div class="cards">
+
+        <div class="card event-card" onclick="openEvent('event1.html')">
+            <img src="poster.png" class="event-img">
+            <h3>2 Days Embedded Workshop</h3>
+            <p>Completed</p>
+        </div>
+
+        <div class="card event-card" onclick="openEvent('event2.html')">
+            <img src="poster.png" class="event-img">
+            <h3>IoT Competition</h3>
+            <p>April 17</p>
+            <p>Upcoming</p>
+        </div>
+
+    </div>
+</section>
+
+<script src="script.js"></script>
+</body>
+</html>
