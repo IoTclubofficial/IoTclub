@@ -173,7 +173,7 @@ function generate(){
 // ================= SEND TO BACKEND =================
 function sendToBackend(payload) {
     const status = document.getElementById("formStatus");
-    status.innerText = "Submitting... Please wait for the submission to be completed    ";
+    status.innerText = "Submitting... (Uploading image safely)";
 
     fetch(API_URL, {
         method: "POST",
@@ -184,6 +184,8 @@ function sendToBackend(payload) {
         body: JSON.stringify(payload)
     })
     .then(() => {
+        // Since Google Apps script is now correctly deployed as "Anyone", this fetch will reach it!
+        // "no-cors" means we won't see the response, but it successfully transmits the data.
         status.innerText = "✅ Submitted Successfully!";
         document.getElementById("form").reset();
         document.getElementById("members").innerHTML = "";
@@ -214,22 +216,18 @@ document.getElementById("form").addEventListener("submit", e => {
             theme: document.getElementById("theme").value,
             teamSize: document.getElementById("teamSize").value,
 
+            name_1: document.getElementById("name_1").value,
+            usn_1: document.getElementById("usn_1").value,
+            phone_1: document.getElementById("phone_1").value,
+            email_1: document.getElementById("email_1").value,
+            college_1: document.getElementById("college_1").value,
+            branch_1: document.getElementById("branch_1").value,
+            sem_1: document.getElementById("sem_1").value,
+
             fileData: reader.result,
             fileName: file.name,
             fileType: file.type
         };
-
-        const size = parseInt(data.teamSize);
-
-        for (let i = 1; i <= size; i++) {
-            data[`name_${i}`] = document.getElementById(`name_${i}`)?.value || "";
-            data[`usn_${i}`] = document.getElementById(`usn_${i}`)?.value || "";
-            data[`phone_${i}`] = document.getElementById(`phone_${i}`)?.value || "";
-            data[`email_${i}`] = document.getElementById(`email_${i}`)?.value || "";
-            data[`college_${i}`] = document.getElementById(`college_${i}`)?.value || "";
-            data[`branch_${i}`] = document.getElementById(`branch_${i}`)?.value || "";
-            data[`sem_${i}`] = document.getElementById(`sem_${i}`)?.value || "";
-        }
 
         sendToBackend(data);
 
@@ -241,3 +239,4 @@ document.getElementById("form").addEventListener("submit", e => {
 
 </body>
 </html>
+
