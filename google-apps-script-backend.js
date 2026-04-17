@@ -1,6 +1,7 @@
-const SHEET_ID = "10D6MhlSzdpHd5zJUSB7-rVxZP00tNjd7oPRC0PfMs3Q";
+const SHEET_ID = "13lIqejgPOdLtSKo_zDZwhuyc_00xqOU8eZ04AlBzU3E";
 const SHEET_NAME = "Sheet1";
 
+// ================= BASIC CHECK =================
 function doGet() {
   return jsonResponse({
     status: "ready",
@@ -8,45 +9,44 @@ function doGet() {
   });
 }
 
+// ================= MAIN POST =================
 function doPost(e) {
   try {
     const payload = getPayload(e);
     const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_NAME);
 
-    if (!sheet) {
-      throw new Error("Target sheet not found");
-    }
+    if (!sheet) throw new Error("Target sheet not found");
 
     validatePayload(payload);
+
+    // Save image
     payload.imageUrl = saveImageFile(payload);
 
-    const row = buildRow(payload);
     const headers = getHeaders();
 
     if (sheet.getLastRow() === 0) {
       sheet.appendRow(headers);
     }
 
+    const row = buildRow(payload);
     sheet.appendRow(row);
 
     return htmlPostMessage({
       type: "registration_result",
-      submissionId: payload.submissionId || "",
       status: "success",
-      message: "Registration saved to the sheet"
+      message: "Registration saved successfully"
     });
+
   } catch (error) {
-    // Use best-effort submissionId when available.
-    const payload = normalizePayload((e && e.parameter) ? e.parameter : {});
     return htmlPostMessage({
       type: "registration_result",
-      submissionId: payload.submissionId || "",
       status: "error",
-      message: error && error.message ? error.message : "Submission failed"
+      message: error.message || "Submission failed"
     });
   }
 }
 
+// ================= HELPERS =================
 function jsonResponse(payload) {
   return ContentService
     .createTextOutput(JSON.stringify(payload))
@@ -55,166 +55,122 @@ function jsonResponse(payload) {
 
 function htmlPostMessage(obj) {
   const safeJson = JSON.stringify(obj).replace(/</g, "\\u003c").replace(/>/g, "\\u003e");
+
   const html = `<!DOCTYPE html>
-  <html><head><meta charset="utf-8"></head>
-  <body>
+  <html><body>
     <script>
-      (function(){
-        try{
-          window.parent.postMessage(${safeJson}, "*");
-        }catch(e){}
-      })();
+      window.parent.postMessage(${safeJson}, "*");
     </script>
   </body></html>`;
-  return ContentService.createTextOutput(html).setMimeType(ContentService.MimeType.HTML);
+
+  return ContentService.createTextOutput(html)
+    .setMimeType(ContentService.MimeType.HTML);
 }
 
+// ================= PAYLOAD =================
 function getPayload(e) {
-  if (!e) {
-    throw new Error("No request body received");
-  }
+  if (!e) throw new Error("No request received");
 
   if (e.postData && e.postData.contents) {
     try {
       return JSON.parse(e.postData.contents);
-    } catch (error) {
+    } catch {
       return normalizePayload(e.parameter || {});
     }
   }
 
-  if (e.parameter) {
-    return normalizePayload(e.parameter);
-  }
+  if (e.parameter) return normalizePayload(e.parameter);
 
-  throw new Error("No request body received");
+  throw new Error("No request body");
 }
 
 function normalizePayload(payload) {
-  const normalized = {};
-
-  Object.keys(payload).forEach(function (key) {
-    normalized[key] = String(payload[key] || "").trim();
+  const obj = {};
+  Object.keys(payload).forEach(k => {
+    obj[k] = String(payload[k] || "").trim();
   });
-
-  return normalized;
+  return obj;
 }
 
-function validatePayload(payload) {
-  if (!payload.teamName) {
-    throw new Error("Team name is required");
+// ================= VALIDATION =================
+function validatePayload(p) {
+
+  if (!p.teamName) throw new Error("Team name required");
+  if (!p.theme) throw new Error("Theme required");
+  if (!p.teamSize) throw new Error("Team size required");
+
+  if (!["1","2","3","4"].includes(String(p.teamSize))) {
+    throw new Error("Invalid team size");
   }
 
-  if (!payload.theme) {
-    throw new Error("Theme is required");
-  }
+  // Leader validation
+  if (!p.name_1) throw new Error("Leader name required");
+  if (!p.phone_1) throw new Error("Leader phone required");
+  if (!p.email_1) throw new Error("Leader email required");
 
-  if (!payload.teamSize) {
-    throw new Error("Team size is required");
-  }
-
-  if (!["2", "3", "4"].includes(String(payload.teamSize))) {
-    throw new Error("Only 2, 3, or 4 members are allowed");
-  }
-
-  if (!payload.fileData || !payload.fileName) {
-    throw new Error("Image upload is required");
+  // Image required
+  if (!p.fileData || !p.fileName) {
+    throw new Error("Payment screenshot required");
   }
 }
 
+// ================= HEADERS =================
 function getHeaders() {
   return [
-    "submittedAt",
-    "teamName",
-    "theme",
-    "teamSize",
-    "imageUrl",
-    "leaderName",
-    "leaderUSN",
-    "leaderPhone",
-    "leaderEmail",
-    "leaderCollege",
-    "leaderBranch",
-    "leaderSem",
-    "member2Name",
-    "member2USN",
-    "member2Phone",
-    "member2Email",
-    "member2College",
-    "member2Branch",
-    "member2Sem",
-    "member3Name",
-    "member3USN",
-    "member3Phone",
-    "member3Email",
-    "member3College",
-    "member3Branch",
-    "member3Sem",
-    "member4Name",
-    "member4USN",
-    "member4Phone",
-    "member4Email",
-    "member4College",
-    "member4Branch",
-    "member4Sem"
+    "Timestamp",
+    "TeamName",
+    "Theme",
+    "TeamSize",
+    "ImageURL",
+
+    "LeaderName",
+    "LeaderUSN",
+    "LeaderPhone",
+    "LeaderEmail",
+    "LeaderCollege",
+    "LeaderBranch",
+    "LeaderSem"
   ];
 }
 
-function buildRow(payload) {
+// ================= BUILD ROW =================
+function buildRow(p) {
   return [
-    payload.submittedAt || new Date().toISOString(),
-    payload.teamName || "",
-    payload.theme || "",
-    payload.teamSize || "",
-    payload.imageUrl || "",
-    payload.name_1 || "",
-    payload.usn_1 || "",
-    payload.phone_1 || "",
-    payload.email_1 || "",
-    payload.college_1 || "",
-    payload.branch_1 || "",
-    payload.sem_1 || "",
-    payload.name_2 || "",
-    payload.usn_2 || "",
-    payload.phone_2 || "",
-    payload.email_2 || "",
-    payload.college_2 || "",
-    payload.branch_2 || "",
-    payload.sem_2 || "",
-    payload.name_3 || "",
-    payload.usn_3 || "",
-    payload.phone_3 || "",
-    payload.email_3 || "",
-    payload.college_3 || "",
-    payload.branch_3 || "",
-    payload.sem_3 || "",
-    payload.name_4 || "",
-    payload.usn_4 || "",
-    payload.phone_4 || "",
-    payload.email_4 || "",
-    payload.college_4 || "",
-    payload.branch_4 || "",
-    payload.sem_4 || "",
+    new Date(),
+
+    p.teamName || "",
+    p.theme || "",
+    p.teamSize || "",
+    p.imageUrl || "",
+
+    p.name_1 || "",
+    p.usn_1 || "",
+    p.phone_1 || "",
+    p.email_1 || "",
+    p.college_1 || "",
+    p.branch_1 || "",
+    p.sem_1 || ""
   ];
 }
 
+// ================= IMAGE UPLOAD =================
 function saveImageFile(payload) {
-  // Form-encoded submissions can sometimes introduce whitespace in base64.
+
   const raw = String(payload.fileData || "").trim();
   const matches = raw.match(/^data:(.+);base64,(.+)$/);
 
-  if (!matches) {
-    throw new Error("Invalid image data");
-  }
+  if (!matches) throw new Error("Invalid image data");
 
   const contentType = payload.fileType || matches[1];
-  // Best-effort repair for base64 where '+' may have been turned into spaces.
+
   let base64 = matches[2];
-  base64 = base64.replace(/ /g, "+");
-  base64 = base64.replace(/\s/g, "");
+  base64 = base64.replace(/ /g, "+").replace(/\s/g, "");
 
   const bytes = Utilities.base64Decode(base64);
-  const blob = Utilities.newBlob(bytes, contentType, payload.fileName || "upload-image");
+  const blob = Utilities.newBlob(bytes, contentType, payload.fileName || "upload");
+
   const file = DriveApp.createFile(blob);
 
   return file.getUrl();
 }
+

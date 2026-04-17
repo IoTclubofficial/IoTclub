@@ -1,267 +1,281 @@
+const API_URL = "https://script.google.com/macros/s/AKfycbwf9sw63pu0e6ymclCLuZ7aaC-7O5Sfu7UHEr2LgZl46DceFGLQ8jibOyIy4_c_3Llg1Q/exec";
+
+// ================= UTILITIES =================
+function encodeData(data) {
+    return btoa(unescape(encodeURIComponent(data)));
+}
+
+function decodeData(data) {
+    return decodeURIComponent(escape(atob(data)));
+}
+
+function safeGet(id) {
+    return document.getElementById(id);
+}
+
 // ================= NAVIGATION =================
-function goToEvents(){
-    window.location.href = "events.html";
+function goTo(page) { window.location.href = page; }
+function goToEvents() { goTo("events.html"); }
+function goHome() { goTo("index2.html"); }
+function goToVerify() { goTo("verify.html"); }
+function goToRegister() { goTo("index.html"); }
+function openEvent(page) { goTo(page); }
+
+// ================= FORM SUBMISSION =================
+function submitForm(event) {
+    event.preventDefault();
+
+    const fileInput = safeGet("fileUpload");
+    const file = fileInput?.files[0];
+
+    if (!file) {
+        alert("⚠ Upload payment screenshot");
+        return;
+    }
+
+    const data = {
+        teamName: safeGet("teamName")?.value,
+        theme: safeGet("theme")?.value,
+        teamSize: safeGet("teamSize")?.value,
+
+        // Leader (IMPORTANT: backend expects these names)
+        name_1: safeGet("leaderName")?.value,
+        usn_1: safeGet("leaderUSN")?.value,
+        phone_1: safeGet("leaderPhone")?.value,
+        email_1: safeGet("leaderEmail")?.value,
+        college_1: safeGet("leaderCollege")?.value,
+        branch_1: safeGet("leaderBranch")?.value,
+        sem_1: safeGet("leaderSem")?.value
+    };
+
+    const reader = new FileReader();
+
+    reader.onload = function () {
+        data.fileData = reader.result;
+        data.fileName = file.name;
+        data.fileType = file.type;
+
+        sendToBackend(data);
+    };
+
+    reader.readAsDataURL(file);
 }
 
-function goHome(){
-    window.location.href = "index.html";
+function sendToBackend(data) {
+
+    fetch(API_URL, {
+        method: "POST",
+        body: JSON.stringify(data)
+    })
+    .then(res => res.text()) // Apps Script returns HTML
+    .then(() => {
+        alert("✅ Registration Successful!");
+    })
+    .catch(err => {
+        console.error(err);
+        alert("❌ Submission failed");
+    });
 }
 
-function openEvent(page){
-    window.location.href = page;
-}
+// ================= VERIFY =================
+function verifyCertificate() {
 
-function goToVerify(){
-    window.location.href = "verify.html";
-}
+    const name = safeGet("verifyName")?.value.trim();
+    const id = safeGet("verifyId")?.value.trim();
 
-// ================= VERIFY (MANUAL INPUT) =================
-function verifyCertificate(){
-
-    const name = document.getElementById("verifyName").value.trim();
-    const id = document.getElementById("verifyId").value.trim();
-
-    if(!name || !id){
+    if (!name || !id) {
         alert("⚠ Enter all fields");
         return;
     }
 
-    const encoded = btoa(`${name}|${id}`);
-
+    const encoded = encodeData(`${name}|${id}`);
     window.location.href = `result.html?data=${encoded}`;
 }
 
 // ================= QR SCANNER =================
-let qrScanner;
+let qrScanner = null;
 let cameras = [];
 let currentCameraIndex = 0;
 
-// START SCAN
-function scanQR(){
+function scanQR() {
 
-    const qrBox = document.getElementById("qr-reader");
+    const qrBox = safeGet("qr-reader");
 
-    if(!qrBox){
+    if (!qrBox) {
         alert("QR container missing");
         return;
     }
 
+    if (typeof Html5Qrcode === "undefined") {
+        alert("QR Scanner failed to load.");
+        return;
+    }
+
     qrBox.style.display = "block";
-    qrBox.innerHTML = "<p style='text-align:center'>📷 Starting camera...</p>";
+    qrBox.innerHTML = "📷 Starting camera...";
 
     qrScanner = new Html5Qrcode("qr-reader");
 
     Html5Qrcode.getCameras()
-    .then(devices => {
+        .then(devices => {
 
-        if(!devices || devices.length === 0){
-            alert("❌ No camera found");
-            return;
-        }
+            if (!devices.length) {
+                alert("No camera found");
+                return;
+            }
 
-        cameras = devices;
+            cameras = devices;
 
-        console.log("Cameras:", devices);
+            currentCameraIndex = devices.findIndex(d =>
+                d.label.toLowerCase().includes("back")
+            );
 
-        // Prefer back camera
-        currentCameraIndex = devices.findIndex(d =>
-            d.label.toLowerCase().includes("back") ||
-            d.label.toLowerCase().includes("rear") ||
-            d.label.toLowerCase().includes("environment")
-        );
+            if (currentCameraIndex === -1) currentCameraIndex = 0;
 
-        if(currentCameraIndex === -1){
-            currentCameraIndex = 0;
-        }
-
-        startCamera(cameras[currentCameraIndex].id);
-
-    })
-    .catch(err => {
-        console.error(err);
-        alert("❌ Camera access denied");
-    });
+            startCamera(cameras[currentCameraIndex].id);
+        })
+        .catch(() => alert("Camera access denied"));
 }
 
-// START CAMERA
-function startCamera(cameraId){
+function startCamera(cameraId) {
+    if (!qrScanner) return;
 
     qrScanner.start(
         cameraId,
-        {
-            fps: 10,
-            qrbox: { width: 250, height: 250 }
-        },
-        (decodedText) => onScanSuccess(decodedText),
-        (error) => {}
-    )
-    .then(() => {
-        console.log("Camera started");
-    })
-    .catch(err => {
-        console.error(err);
-        alert("❌ Failed to start camera");
-    });
+        { fps: 10, qrbox: 250 },
+        onScanSuccess
+    );
 }
 
-// QR SUCCESS
-function onScanSuccess(qrMessage){
+function onScanSuccess(qrMessage) {
 
-    console.log("QR:", qrMessage);
+    if (qrScanner) qrScanner.stop();
 
-    if(qrScanner){
-        qrScanner.stop();
-    }
-
-    // If QR is URL → open
-    if(qrMessage.startsWith("http")){
+    if (qrMessage.startsWith("http")) {
         window.location.href = qrMessage;
         return;
     }
 
-    // If base64 → convert
-    try{
-        const decoded = atob(qrMessage);
+    try {
+        const decoded = decodeData(qrMessage);
 
-        if(decoded.includes("|")){
-            const encoded = btoa(decoded);
-            window.location.href = `result.html?data=${encoded}`;
+        if (decoded.includes("|")) {
+            window.location.href = `result.html?data=${encodeData(decoded)}`;
             return;
         }
 
-    }catch{}
+    } catch {}
 
-    alert("❌ Invalid QR");
+    alert("Invalid QR");
 }
 
-// SWITCH CAMERA
-function switchCamera(){
+function switchCamera() {
 
-    if(!qrScanner){
-        alert("⚠ Start scanner first");
-        return;
-    }
-
-    if(cameras.length < 2){
-        alert("⚠ Only one camera available");
+    if (!qrScanner || cameras.length < 2) {
+        alert("No alternate camera");
         return;
     }
 
     qrScanner.stop().then(() => {
-
         currentCameraIndex = (currentCameraIndex + 1) % cameras.length;
-
-        console.log("Switching camera:", cameras[currentCameraIndex]);
-
         startCamera(cameras[currentCameraIndex].id);
-
-    }).catch(err => {
-        console.error(err);
     });
 }
 
-// ================= TYPING EFFECT =================
-let text = "IOTIFY";
-let i = 0;
+// ================= SCANNER OVERLAY =================
+function openScanner() {
+    const el = safeGet("scannerOverlay");
+    if (!el) return;
 
-function typing(){
-    const el = document.getElementById("typing");
-
-    if(el && i < text.length){
-        el.innerHTML += text.charAt(i);
-        i++;
-        setTimeout(typing,150);
-    }
-}
-
-// ================= PARTICLE BACKGROUND =================
-window.onload = function(){
-
-    typing();
-
-    const canvas = document.getElementById("bg");
-
-    if(canvas){
-
-        const ctx = canvas.getContext("2d");
-
-        function resizeCanvas(){
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        }
-
-        resizeCanvas();
-        window.addEventListener("resize", resizeCanvas);
-
-        let particles = [];
-
-        for(let i=0;i<100;i++){
-            particles.push({
-                x:Math.random()*canvas.width,
-                y:Math.random()*canvas.height,
-                r:Math.random()*2,
-                dx:(Math.random()-0.5),
-                dy:(Math.random()-0.5)
-            });
-        }
-
-        function draw(){
-
-            ctx.clearRect(0,0,canvas.width,canvas.height);
-
-            ctx.fillStyle="#00f7ff";
-
-            particles.forEach(p=>{
-
-                ctx.beginPath();
-                ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
-                ctx.fill();
-
-                p.x+=p.dx;
-                p.y+=p.dy;
-
-                if(p.x<0||p.x>canvas.width) p.dx*=-1;
-                if(p.y<0||p.y>canvas.height) p.dy*=-1;
-            });
-
-            requestAnimationFrame(draw);
-        }
-
-        draw();
-    }
-};
-// OPEN SCANNER
-function openScanner(){
-    document.getElementById("scannerOverlay").style.display = "flex";
+    el.style.display = "flex";
     scanQR();
 }
 
-// CLOSE SCANNER
-function closeScanner(){
-    document.getElementById("scannerOverlay").style.display = "none";
+function closeScanner() {
+    const el = safeGet("scannerOverlay");
+    if (!el) return;
 
-    if(qrScanner){
-        qrScanner.stop().catch(()=>{});
-    }
-}   
-// Existing navigation functions...
-function goToRegister() {
-    window.location.href = "register.html";
+    el.style.display = "none";
+    if (qrScanner) qrScanner.stop();
 }
 
-// Popup Logic
+// ================= EFFECTS =================
+let text = "IOTIFY";
+let i = 0;
+
+function typing() {
+    const el = safeGet("typing");
+
+    if (el && i < text.length) {
+        el.innerHTML += text.charAt(i);
+        i++;
+        setTimeout(typing, 150);
+    }
+}
+
+function initParticles() {
+    const canvas = safeGet("bg");
+    if (!canvas) return;
+
+    const ctx = canvas.getContext("2d");
+
+    function resize() {
+        canvas.width = innerWidth;
+        canvas.height = innerHeight;
+    }
+
+    resize();
+    addEventListener("resize", resize);
+
+    let particles = Array.from({ length: 100 }, () => ({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        r: Math.random() * 2,
+        dx: Math.random() - 0.5,
+        dy: Math.random() - 0.5
+    }));
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        particles.forEach(p => {
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+            ctx.fill();
+
+            p.x += p.dx;
+            p.y += p.dy;
+
+            if (p.x < 0 || p.x > canvas.width) p.dx *= -1;
+            if (p.y < 0 || p.y > canvas.height) p.dy *= -1;
+        });
+
+        requestAnimationFrame(draw);
+    }
+
+    draw();
+}
+
+// ================= POPUP =================
 function openPopup() {
-    document.getElementById("popup").style.display = "flex";
+    const el = safeGet("popup");
+    if (el) el.style.display = "flex";
 }
 
 function closePopup() {
-    document.getElementById("popup").style.display = "none";
+    const el = safeGet("popup");
+    if (el) el.style.display = "none";
 }
 
-// Close popup if user clicks outside the box
-window.onclick = function(event) {
-    const modal = document.getElementById("popup");
-    if (event.target == modal) {
-        modal.style.display = "none";
-    }
-}
+window.addEventListener("click", e => {
+    const modal = safeGet("popup");
+    if (e.target === modal) modal.style.display = "none";
+});
+
+// ================= INIT =================
+window.onload = function () {
+    typing();
+    initParticles();
+};
+
+
