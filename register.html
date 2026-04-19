@@ -13,10 +13,11 @@
 body{
     background: radial-gradient(circle at top,#0f2027,#0a0a0f 60%);
     color:#fff;
+    overflow-x: hidden; /* Prevents accidental horizontal scroll */
 }
 
 .register-section{
-    padding:100px 10%;
+    padding:60px 20px; /* Reduced padding for mobile utility */
     display:flex;
     justify-content:center;
 }
@@ -24,13 +25,13 @@ body{
 .register-container{
     width:100%;
     max-width:900px;
-    padding:40px;
+    padding:30px 20px;
     border-radius:25px;
     background:rgba(255,255,255,0.05);
     backdrop-filter:blur(15px);
 }
 
-h1{text-align:center;margin-bottom:10px;}
+h1{text-align:center;margin-bottom:10px; font-size: 1.8rem;}
 p{text-align:center;margin-bottom:30px;color:#aaa;}
 
 .qr-preview{
@@ -63,6 +64,8 @@ input,select{
     border:none;
     background:#111;
     color:#fff;
+    width: 100%; /* Ensures inputs stay within grid cell */
+    font-size: 14px;
 }
 
 .member{
@@ -73,27 +76,8 @@ input,select{
 }
 
 .status-message{
-    display:none;
     margin-top:20px;
-    padding:14px 16px;
-    border-radius:12px;
     text-align:center;
-    font-size:14px;
-    line-height:1.5;
-}
-
-.status-message.success{
-    display:block;
-    background:rgba(0,255,174,0.12);
-    color:#9dffd6;
-    border:1px solid rgba(0,255,174,0.35);
-}
-
-.status-message.error{
-    display:block;
-    background:rgba(255,77,77,0.12);
-    color:#ffb3b3;
-    border:1px solid rgba(255,77,77,0.35);
 }
 
 button{
@@ -108,9 +92,18 @@ button{
     cursor:pointer;
 }
 
+/* Updated Media Query for mobile fix */
 @media(max-width:768px){
-    .form-grid{grid-template-columns:1fr;}
-    .full{grid-column:span 1;}
+    .register-section { padding: 40px 15px; }
+    .form-grid{
+        grid-template-columns: 1fr !important; /* Forces single column */
+    }
+    .full{
+        grid-column: span 1 !important;
+    }
+    input, select {
+        box-sizing: border-box; /* Ensures padding doesn't add to width */
+    }
 }
 </style>
 </head>
@@ -124,22 +117,22 @@ button{
 <p>Fill your team details</p>
 
 <div class="qr-preview">
-<img src="paymentqr.jpeg" alt="Payment QR code">
-<p>Payment must be done to this QR</p>
+<img src="paymentqr.jpeg">
+<p>Scan & Pay before registering</p>
 </div>
 
 <form id="form">
 
 <div class="form-grid">
-<input class="full" name="teamName" placeholder="Team Name" required>
+<input id="teamName" class="full" placeholder="Team Name" required>
 
-<select name="theme" required>
+<select id="theme" required>
 <option disabled selected>Select Theme</option>
 <option>Sustainable Development</option>
 <option>Open Innovation</option>
 </select>
 
-<select id="size" name="teamSize" required onchange="generate()">
+<select id="teamSize" required onchange="generate()">
 <option disabled selected>Team Size</option>
 <option value="1">1</option>
 <option value="2">2</option>
@@ -147,12 +140,12 @@ button{
 <option value="4">4</option>
 </select>
 
-<input class="full" id="projectFile" type="file" name="projectFile" accept="image/png,image/jpeg,image/jpg" required>
+<input id="fileUpload" class="full" type="file" accept="image/*" required>
 </div>
 
 <div id="members"></div>
 
-<div id="formStatus" class="status-message" aria-live="polite"></div>
+<div id="formStatus" class="status-message"></div>
 
 <button type="submit">Register</button>
 
@@ -161,183 +154,11 @@ button{
 </section>
 
 <script>
-const scriptURL = "https://script.google.com/macros/s/AKfycbzHZQiKcTkYP3mRprAdVybGa5JDHTvwdh5C2ctkBdHPqIS5FqenTKERXfsU5wBn4ET5bw/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbwf9sw63pu0e6ymclCLuZ7aaC-7O5Sfu7UHEr2LgZl46DceFGLQ8jibOyIy4_c_3Llg1Q/exec";
 
-// Note: don't block the UI waiting for postMessage from the Apps Script iframe.
-// Some deployments don't respond consistently, which can leave the button stuck.
-
-if(!window.__registrationMessageListener){
-    window.__registrationMessageListener = true;
-    window.addEventListener("message", function(event){
-        const data = event.data;
-        if(!data || data.type !== "registration_result") return;
-        if(!window.__activeRegistration) return;
-
-        const state = window.__activeRegistration;
-        window.__activeRegistration = null;
-
-        try{ if(state.timeoutId) clearTimeout(state.timeoutId); }catch(e){}
-
-        state.submitButton.disabled = false;
-        state.submitButton.textContent = state.originalText;
-
-        if(data.status === "success"){
-            state.formEl.reset();
-            document.getElementById("members").innerHTML = "";
-            showStatus("success", data.message || "Registration saved");
-        }else{
-            showStatus("error", data.message || "Submission failed");
-        }
-    });
-}
-
-function collectFormData(form){
-    const formData = new FormData(form);
-    const payload = {};
-
-    for(const [key, value] of formData.entries()){
-        if(value instanceof File){
-            continue;
-        }
-
-        payload[key] = typeof value === "string" ? value.trim() : value;
-    }
-
-    payload.submittedAt = new Date().toISOString();
-
-    return payload;
-}
-
-function readFileAsAdaptiveCompressedJpegDataUrl(file){
-    // Apps Script web-app payloads are limited. We allow up to 100MB uploads,
-    // but we compress adaptively until the payload is small enough.
-    // Base64 + JSON/body encoding can blow past limits quickly.
-    // Keep this very small to ensure the backend receives the request.
-    const targetMaxDataUrlChars = 220000;
-    const attempts = [
-        { maxDim: 360, quality: 0.52 },
-        { maxDim: 300, quality: 0.45 },
-        { maxDim: 240, quality: 0.38 },
-        { maxDim: 190, quality: 0.32 }
-    ];
-
-    return new Promise((resolve, reject) => {
-        const img = new Image();
-        const url = URL.createObjectURL(file);
-
-        img.onload = () => {
-            try{
-                const baseW = img.width;
-                const baseH = img.height;
-
-                for(const attempt of attempts){
-                    const canvas = document.createElement("canvas");
-                    const ctx = canvas.getContext("2d");
-
-                    let w = baseW;
-                    let h = baseH;
-                    const maxDim = attempt.maxDim;
-                    if(w > maxDim || h > maxDim){
-                        const scale = Math.min(maxDim / w, maxDim / h);
-                        w = Math.round(w * scale);
-                        h = Math.round(h * scale);
-                    }
-
-                    canvas.width = w;
-                    canvas.height = h;
-                    ctx.drawImage(img, 0, 0, w, h);
-
-                    const dataUrl = canvas.toDataURL("image/jpeg", attempt.quality);
-
-                    if(dataUrl.length <= targetMaxDataUrlChars){
-                        URL.revokeObjectURL(url);
-                        resolve(dataUrl);
-                        return;
-                    }
-                }
-
-                // If still too large, return the most compressed attempt.
-                // Backend will likely still fail if it's huge, so we guard here.
-                const lastAttempt = attempts[attempts.length - 1];
-                const canvas = document.createElement("canvas");
-                const ctx = canvas.getContext("2d");
-                let w = baseW;
-                let h = baseH;
-                if(w > lastAttempt.maxDim || h > lastAttempt.maxDim){
-                    const scale = Math.min(lastAttempt.maxDim / w, lastAttempt.maxDim / h);
-                    w = Math.round(w * scale);
-                    h = Math.round(h * scale);
-                }
-                canvas.width = w;
-                canvas.height = h;
-                ctx.drawImage(img, 0, 0, w, h);
-                const dataUrl = canvas.toDataURL("image/jpeg", lastAttempt.quality);
-
-                URL.revokeObjectURL(url);
-                if(dataUrl.length > targetMaxDataUrlChars){
-                    reject(new Error("Image payload too large even after compression. Please upload a smaller image."));
-                    return;
-                }
-                resolve(dataUrl);
-            }catch(err){
-                URL.revokeObjectURL(url);
-                reject(err);
-            }
-        };
-
-        img.onerror = () => {
-            URL.revokeObjectURL(url);
-            reject(new Error("Failed to read image file"));
-        };
-
-        img.src = url;
-    });
-}
-
-function showStatus(type, message){
-    const statusBox = document.getElementById("formStatus");
-    statusBox.className = "status-message " + type;
-    statusBox.textContent = message;
-}
-
-function clearStatus(){
-    const statusBox = document.getElementById("formStatus");
-    statusBox.className = "status-message";
-    statusBox.textContent = "";
-}
-
-function submitToAppsScript(payload){
-    const iframeName = "hiddenSubmitFrame";
-    let iframe = document.querySelector(`iframe[name="${iframeName}"]`);
-
-    if(!iframe){
-        iframe = document.createElement("iframe");
-        iframe.name = iframeName;
-        iframe.style.display = "none";
-        document.body.appendChild(iframe);
-    }
-
-    const tempForm = document.createElement("form");
-    tempForm.method = "POST";
-    tempForm.action = scriptURL;
-    tempForm.target = iframeName;
-    tempForm.style.display = "none";
-
-    Object.entries(payload).forEach(([key, value]) => {
-        const input = document.createElement("input");
-        input.type = "hidden";
-        input.name = key;
-        input.value = value ?? "";
-        tempForm.appendChild(input);
-    });
-
-    document.body.appendChild(tempForm);
-    tempForm.submit();
-    tempForm.remove();
-}
-
+// ================= GENERATE MEMBERS =================
 function generate(){
-    const size = document.getElementById("size").value;
+    const size = document.getElementById("teamSize").value;
     const container = document.getElementById("members");
     container.innerHTML="";
 
@@ -346,86 +167,87 @@ function generate(){
         <div class="member">
         <h3>${i==1?"Leader":"Member "+i}</h3>
         <div class="form-grid">
-        <input name="name_${i}" placeholder="Name" required>
-        <input name="usn_${i}" placeholder="USN" required>
-        <input name="phone_${i}" placeholder="Phone" required>
-        <input name="email_${i}" placeholder="Email" required>
-        <input name="college_${i}" placeholder="College Name" required>
-        <input name="branch_${i}" placeholder="Branch" required>
-        <select name="sem_${i}" required>
-        <option value="" disabled selected>Select Sem</option>
-        <option value="2">2</option>
-        <option value="4">4</option>
-        <option value="6">6</option>
-        <option value="8">8</option>
+        <input id="name_${i}" placeholder="Name" required>
+        <input id="usn_${i}" placeholder="USN" required>
+        <input id="phone_${i}" placeholder="Phone" required>
+        <input id="email_${i}" placeholder="Email" required>
+        <input id="college_${i}" placeholder="College" required>
+        <input id="branch_${i}" placeholder="Branch" required>
+        <select id="sem_${i}" required>
+        <option disabled selected>Sem</option>
+        <option>2</option><option>4</option><option>6</option><option>8</option>
         </select>
         </div>
         </div>`;
     }
 }
 
-document.getElementById("form").addEventListener("submit", async e=>{
-    e.preventDefault();
-    clearStatus();
+// ================= SEND TO BACKEND =================
+function sendToBackend(payload) {
+    const status = document.getElementById("formStatus");
+    status.innerText = "Submitting... Please wait for the submission to be completed";
 
-    if(scriptURL === "PASTE_YOUR_WEB_APP_URL_HERE"){
-        showStatus("error", "Backend URL is not configured yet.");
+    fetch(API_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: {
+            "Content-Type": "text/plain"
+        },
+        body: JSON.stringify(payload)
+    })
+    .then(() => {
+        status.innerText = "✅ Submitted Successfully!";
+        document.getElementById("form").reset();
+        document.getElementById("members").innerHTML = "";
+    })
+    .catch(err => {
+        status.innerText = "❌ Submission failed. Check your internet connection.";
+        console.error(err);
+    });
+}
+
+// ================= SUBMIT =================
+document.getElementById("form").addEventListener("submit", e => {
+    e.preventDefault();
+
+    const file = document.getElementById("fileUpload").files[0];
+
+    if (!file) {
+        alert("Upload screenshot");
         return;
     }
 
-    const submitButton = e.target.querySelector('button[type="submit"]');
-    const originalText = submitButton.textContent;
-    const payload = collectFormData(e.target);
-    const imageFile = document.getElementById("projectFile").files[0];
+    const reader = new FileReader();
 
-    submitButton.disabled = true;
-    submitButton.textContent = "Submitting...";
+    reader.onload = function () {
 
-    try{
-        if(!imageFile){
-            throw new Error("Please upload an image");
-        }
+        const data = {
+            teamName: document.getElementById("teamName").value,
+            theme: document.getElementById("theme").value,
+            teamSize: document.getElementById("teamSize").value,
 
-        // Keep payload small enough for Apps Script web app requests.
-        // Larger base64 payloads commonly cause silent request drops (no sheet row + timeout).
-        const maxUploadBytes = 100 * 1024 * 1024; // 100MB original upload limit
-        if(imageFile.size > maxUploadBytes){
-            throw new Error("Image is too large. Please upload an image under 100MB.");
-        }
-
-        payload.fileName = imageFile.name;
-        payload.fileType = imageFile.type || "application/octet-stream";
-        payload.fileData = await readFileAsAdaptiveCompressedJpegDataUrl(imageFile);
-
-        document.getElementById("formStatus").className = "status-message success";
-        document.getElementById("formStatus").textContent = "Submitting... please wait";
-
-        const timeoutId = setTimeout(function(){
-            if(window.__activeRegistration){
-                window.__activeRegistration = null;
-                submitButton.disabled = false;
-                submitButton.textContent = originalText;
-                showStatus("error", "Submission timed out. Check payload size / deployment access.");
-            }
-        }, 90000);
-
-        window.__activeRegistration = {
-            submitButton,
-            originalText,
-            formEl: e.target,
-            timeoutId
+            fileData: reader.result,
+            fileName: file.name,
+            fileType: file.type
         };
 
-        submitToAppsScript(payload);
-    }catch(err){
-        showStatus("error", err && err.message ? err.message : "Submission failed.");
-    }finally{
-        // If backend response hasn't arrived yet, keep the button disabled.
-        if(!window.__activeRegistration){
-            submitButton.disabled = false;
-            submitButton.textContent = originalText;
+        const size = parseInt(data.teamSize);
+
+        for (let i = 1; i <= size; i++) {
+            data[`name_${i}`] = document.getElementById(`name_${i}`)?.value || "";
+            data[`usn_${i}`] = document.getElementById(`usn_${i}`)?.value || "";
+            data[`phone_${i}`] = document.getElementById(`phone_${i}`)?.value || "";
+            data[`email_${i}`] = document.getElementById(`email_${i}`)?.value || "";
+            data[`college_${i}`] = document.getElementById(`college_${i}`)?.value || "";
+            data[`branch_${i}`] = document.getElementById(`branch_${i}`)?.value || "";
+            data[`sem_${i}`] = document.getElementById(`sem_${i}`)?.value || "";
         }
-    }
+
+        sendToBackend(data);
+
+    };
+
+    reader.readAsDataURL(file);
 });
 </script>
 
