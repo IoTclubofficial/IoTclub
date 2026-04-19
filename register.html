@@ -2,22 +2,29 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>IOTIFY Registration</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600;700&display=swap" rel="stylesheet">
 
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:'Poppins',sans-serif;}
+/* Reset and Box Model Fix */
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box; /* Critical: includes padding in width calculation */
+    font-family:'Poppins',sans-serif;
+}
 
 body{
     background: radial-gradient(circle at top,#0f2027,#0a0a0f 60%);
     color:#fff;
-    overflow-x: hidden; /* Prevents accidental horizontal scroll */
+    min-height: 100vh;
+    overflow-x: hidden; /* Prevents horizontal scroll */
 }
 
 .register-section{
-    padding:60px 20px; /* Reduced padding for mobile utility */
+    padding:40px 15px; /* Minimal side padding for mobile */
     display:flex;
     justify-content:center;
 }
@@ -25,14 +32,14 @@ body{
 .register-container{
     width:100%;
     max-width:900px;
-    padding:30px 20px;
+    padding:30px 15px;
     border-radius:25px;
     background:rgba(255,255,255,0.05);
     backdrop-filter:blur(15px);
 }
 
-h1{text-align:center;margin-bottom:10px; font-size: 1.8rem;}
-p{text-align:center;margin-bottom:30px;color:#aaa;}
+h1{text-align:center;margin-bottom:10px; font-size: 1.5rem;}
+p{text-align:center;margin-bottom:30px;color:#aaa; font-size: 0.9rem;}
 
 .qr-preview{
     display:flex;
@@ -43,8 +50,9 @@ p{text-align:center;margin-bottom:30px;color:#aaa;}
 }
 
 .qr-preview img{
-    width:180px;
-    height:180px;
+    max-width:180px; /* Responsive size */
+    width: 100%;
+    height: auto;
     padding:10px;
     border-radius:16px;
     background:#fff;
@@ -52,32 +60,35 @@ p{text-align:center;margin-bottom:30px;color:#aaa;}
 
 .form-grid{
     display:grid;
-    grid-template-columns:repeat(2,1fr);
-    gap:20px;
+    grid-template-columns: 1fr 1fr; /* Default 2 columns */
+    gap:15px;
 }
 
 .full{grid-column:span 2;}
 
 input,select{
+    width: 100% !important; /* Forces input to stay within container */
     padding:12px;
     border-radius:10px;
     border:none;
     background:#111;
     color:#fff;
-    width: 100%; /* Ensures inputs stay within grid cell */
-    font-size: 14px;
+    font-size: 16px; /* Prevents auto-zoom on iPhone */
 }
 
 .member{
     margin-top:20px;
-    padding:20px;
+    padding:15px;
     border-radius:15px;
     background:rgba(0,247,255,0.05);
 }
 
+.member h3 { margin-bottom: 15px; font-size: 1.1rem; color: #00f7ff; }
+
 .status-message{
     margin-top:20px;
     text-align:center;
+    font-size: 0.85rem;
 }
 
 button{
@@ -90,19 +101,22 @@ button{
     color:#000;
     font-weight:bold;
     cursor:pointer;
+    font-size: 1rem;
 }
 
-/* Updated Media Query for mobile fix */
-@media(max-width:768px){
-    .register-section { padding: 40px 15px; }
-    .form-grid{
-        grid-template-columns: 1fr !important; /* Forces single column */
+/* MOBILE FIXES */
+@media(max-width:600px){
+    .form-grid {
+        grid-template-columns: 1fr; /* Force 1 column on mobile */
     }
-    .full{
-        grid-column: span 1 !important;
+    .full {
+        grid-column: span 1;
+    }
+    .register-container {
+        padding: 20px 15px;
     }
     input, select {
-        box-sizing: border-box; /* Ensures padding doesn't add to width */
+        font-size: 14px; /* Slightly smaller text for small screens */
     }
 }
 </style>
@@ -127,13 +141,13 @@ button{
 <input id="teamName" class="full" placeholder="Team Name" required>
 
 <select id="theme" required>
-<option disabled selected>Select Theme</option>
+<option disabled selected value="">Select Theme</option>
 <option>Sustainable Development</option>
 <option>Open Innovation</option>
 </select>
 
 <select id="teamSize" required onchange="generate()">
-<option disabled selected>Team Size</option>
+<option disabled selected value="">Team Size</option>
 <option value="1">1</option>
 <option value="2">2</option>
 <option value="3">3</option>
@@ -156,7 +170,6 @@ button{
 <script>
 const API_URL = "https://script.google.com/macros/s/AKfycbwf9sw63pu0e6ymclCLuZ7aaC-7O5Sfu7UHEr2LgZl46DceFGLQ8jibOyIy4_c_3Llg1Q/exec";
 
-// ================= GENERATE MEMBERS =================
 function generate(){
     const size = document.getElementById("teamSize").value;
     const container = document.getElementById("members");
@@ -174,7 +187,7 @@ function generate(){
         <input id="college_${i}" placeholder="College" required>
         <input id="branch_${i}" placeholder="Branch" required>
         <select id="sem_${i}" required>
-        <option disabled selected>Sem</option>
+        <option disabled selected value="">Sem</option>
         <option>2</option><option>4</option><option>6</option><option>8</option>
         </select>
         </div>
@@ -182,10 +195,9 @@ function generate(){
     }
 }
 
-// ================= SEND TO BACKEND =================
 function sendToBackend(payload) {
     const status = document.getElementById("formStatus");
-    status.innerText = "Submitting... Please wait for the submission to be completed";
+    status.innerText = "Submitting... Please wait.";
 
     fetch(API_URL, {
         method: "POST",
@@ -201,38 +213,32 @@ function sendToBackend(payload) {
         document.getElementById("members").innerHTML = "";
     })
     .catch(err => {
-        status.innerText = "❌ Submission failed. Check your internet connection.";
+        status.innerText = "❌ Submission failed. Check your connection.";
         console.error(err);
     });
 }
 
-// ================= SUBMIT =================
 document.getElementById("form").addEventListener("submit", e => {
     e.preventDefault();
 
     const file = document.getElementById("fileUpload").files[0];
-
     if (!file) {
         alert("Upload screenshot");
         return;
     }
 
     const reader = new FileReader();
-
     reader.onload = function () {
-
         const data = {
             teamName: document.getElementById("teamName").value,
             theme: document.getElementById("theme").value,
             teamSize: document.getElementById("teamSize").value,
-
             fileData: reader.result,
             fileName: file.name,
             fileType: file.type
         };
 
         const size = parseInt(data.teamSize);
-
         for (let i = 1; i <= size; i++) {
             data[`name_${i}`] = document.getElementById(`name_${i}`)?.value || "";
             data[`usn_${i}`] = document.getElementById(`usn_${i}`)?.value || "";
@@ -242,11 +248,8 @@ document.getElementById("form").addEventListener("submit", e => {
             data[`branch_${i}`] = document.getElementById(`branch_${i}`)?.value || "";
             data[`sem_${i}`] = document.getElementById(`sem_${i}`)?.value || "";
         }
-
         sendToBackend(data);
-
     };
-
     reader.readAsDataURL(file);
 });
 </script>
