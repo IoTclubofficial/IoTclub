@@ -17,6 +17,7 @@ function safeGet(id) {
 function goTo(page) { window.location.href = page; }
 function goToEvents() { goTo("events.html"); }
 function goHome() { goTo("events.html"); }
+function goHome1() { goTo("index.html"); }
 function goToVerify() { goTo("verify.html"); }
 function goToRegister() { goTo("index.html"); }
 function openEvent(page) { goTo(page); }
