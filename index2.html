@@ -204,10 +204,15 @@ function sendToBackend(payload) {
         body: JSON.stringify(payload)
     })
     .then(() => {
-        status.innerText = "✅ Submitted Successfully!";
-        document.getElementById("form").reset();
-        document.getElementById("members").innerHTML = "";
-    })
+    status.innerText = "✅ Submitted Successfully!";
+    document.getElementById("form").reset();
+    document.getElementById("members").innerHTML = "";
+
+    // Redirect after 1.5 seconds
+    setTimeout(() => {
+        window.location.href = "index2.html";
+    }, 1500);
+})
     .catch(err => {
         status.innerText = "❌ Submission failed. Check your internet connection.";
         console.error(err);
