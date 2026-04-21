@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>IOTIFY Registration</title>
+<title>IoTIFY Registration</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600;700&display=swap" rel="stylesheet">
 
@@ -11,14 +11,14 @@
 *{
     margin:0;
     padding:0;
-    box-sizing:border-box; /* This ensures padding doesn't push boxes out of the screen */
+    box-sizing:border-box;
     font-family:'Poppins',sans-serif;
 }
 
 body{
     background: radial-gradient(circle at top,#0f2027,#0a0a0f 60%);
     color:#fff;
-    overflow-x: hidden; /* Prevents horizontal scrolling on the whole page */
+    overflow-x: hidden;
 }
 
 .register-section{
@@ -64,13 +64,13 @@ p{text-align:center;margin-bottom:30px;color:#aaa;}
 .full{grid-column:span 2;}
 
 input,select{
-    width: 100%; /* Forces the input to fill the grid cell only */
+    width:100%;
     padding:12px;
     border-radius:10px;
     border:none;
     background:#111;
     color:#fff;
-    font-size: 16px; /* Prevents iOS zoom on focus */
+    font-size:16px;
 }
 
 .member{
@@ -97,13 +97,31 @@ button{
     cursor:pointer;
 }
 
-/* MOBILE FIX: Collapse grid and ensure width containment */
+/* NEW: Custom file upload */
+.file-label{
+    display:block;
+    width:100%;
+    padding:12px;
+    border-radius:10px;
+    background:#111;
+    color:#aaa;
+    text-align:left;
+    cursor:pointer;
+    border:1px solid rgba(255,255,255,0.1);
+}
+
+.file-label:hover{
+    color:#00f7ff;
+    border-color:#00f7ff;
+}
+
+/* MOBILE FIX */
 @media(max-width:600px){
     .register-section {
         padding: 30px 10px;
     }
     .form-grid{
-        grid-template-columns: 1fr; /* Force inputs into a single column */
+        grid-template-columns: 1fr;
     }
     .full{
         grid-column: span 1;
@@ -126,7 +144,7 @@ button{
 <div class="qr-preview">
 <img src="paymentqr.jpeg">
 <p>Scan & Pay before registering</p>
-    <p>Entry Fee 400 Rs </p>
+<p>Entry Fee 400 Rs </p>
 </div>
 
 <form id="form">
@@ -148,7 +166,10 @@ button{
 <option value="4">4</option>
 </select>
 
-<input id="fileUpload" class="full" type="file" accept="image/*" required>
+<!-- UPDATED FILE INPUT -->
+<label for="fileUpload" class="file-label full">Please upload payment screenshot</label>
+<input id="fileUpload" type="file" accept="image/*" required hidden>
+
 </div>
 
 <div id="members"></div>
@@ -204,17 +225,17 @@ function sendToBackend(payload) {
         body: JSON.stringify(payload)
     })
     .then(() => {
-    status.innerText = "✅ Submitted Successfully!";
-    document.getElementById("form").reset();
-    document.getElementById("members").innerHTML = "";
+        status.innerText = "✅ Registration Successful!";
+        document.getElementById("form").reset();
+        document.getElementById("members").innerHTML = "";
 
-    // Redirect after 1.5 seconds
-    setTimeout(() => {
-        window.location.href = "index2.html";
-    }, 1500);
-})
+        // REDIRECT ADDED
+        setTimeout(() => {
+            window.location.href = "index2.html";
+        }, 1500);
+    })
     .catch(err => {
-        status.innerText = "❌ Submission failed. Check your internet connection.";
+        status.innerText = "❌ Registration failed.";
         console.error(err);
     });
 }
@@ -261,6 +282,16 @@ document.getElementById("form").addEventListener("submit", e => {
     };
 
     reader.readAsDataURL(file);
+});
+
+// OPTIONAL: show selected file name
+document.getElementById("fileUpload").addEventListener("change", function(){
+    const label = document.querySelector(".file-label");
+    if(this.files.length > 0){
+        label.innerText = this.files[0].name;
+    } else {
+        label.innerText = "Please upload payment screenshot";
+    }
 });
 </script>
 
