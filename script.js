@@ -16,7 +16,7 @@ function safeGet(id) {
 // ================= NAVIGATION =================
 function goTo(page) { window.location.href = page; }
 function goToEvents() { goTo("events.html"); }
-function goHome() { goTo("index.html"); }
+function goHome() { goTo("events.html"); }
 function goToVerify() { goTo("verify.html"); }
 function goToRegister() { goTo("index.html"); }
 function openEvent(page) { goTo(page); }
