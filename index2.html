@@ -8,15 +8,21 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600;700&display=swap" rel="stylesheet">
 
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:'Poppins',sans-serif;}
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box; /* This ensures padding doesn't push boxes out of the screen */
+    font-family:'Poppins',sans-serif;
+}
 
 body{
     background: radial-gradient(circle at top,#0f2027,#0a0a0f 60%);
     color:#fff;
+    overflow-x: hidden; /* Prevents horizontal scrolling on the whole page */
 }
 
 .register-section{
-    padding:100px 10%;
+    padding:60px 5%;
     display:flex;
     justify-content:center;
 }
@@ -24,7 +30,7 @@ body{
 .register-container{
     width:100%;
     max-width:900px;
-    padding:40px;
+    padding:40px 20px;
     border-radius:25px;
     background:rgba(255,255,255,0.05);
     backdrop-filter:blur(15px);
@@ -58,11 +64,13 @@ p{text-align:center;margin-bottom:30px;color:#aaa;}
 .full{grid-column:span 2;}
 
 input,select{
+    width: 100%; /* Forces the input to fill the grid cell only */
     padding:12px;
     border-radius:10px;
     border:none;
     background:#111;
     color:#fff;
+    font-size: 16px; /* Prevents iOS zoom on focus */
 }
 
 .member{
@@ -89,9 +97,20 @@ button{
     cursor:pointer;
 }
 
-@media(max-width:768px){
-    .form-grid{grid-template-columns:1fr;}
-    .full{grid-column:span 1;}
+/* MOBILE FIX: Collapse grid and ensure width containment */
+@media(max-width:600px){
+    .register-section {
+        padding: 30px 10px;
+    }
+    .form-grid{
+        grid-template-columns: 1fr; /* Force inputs into a single column */
+    }
+    .full{
+        grid-column: span 1;
+    }
+    .register-container {
+        padding: 25px 15px;
+    }
 }
 </style>
 </head>
@@ -115,13 +134,13 @@ button{
 <input id="teamName" class="full" placeholder="Team Name" required>
 
 <select id="theme" required>
-<option disabled selected>Select Theme</option>
+<option disabled selected value="">Select Theme</option>
 <option>Sustainable Development</option>
 <option>Open Innovation</option>
 </select>
 
 <select id="teamSize" required onchange="generate()">
-<option disabled selected>Team Size</option>
+<option disabled selected value="">Team Size</option>
 <option value="1">1</option>
 <option value="2">2</option>
 <option value="3">3</option>
@@ -162,7 +181,7 @@ function generate(){
         <input id="college_${i}" placeholder="College" required>
         <input id="branch_${i}" placeholder="Branch" required>
         <select id="sem_${i}" required>
-        <option disabled selected>Sem</option>
+        <option disabled selected value="">Sem</option>
         <option>2</option><option>4</option><option>6</option><option>8</option>
         </select>
         </div>
@@ -173,7 +192,7 @@ function generate(){
 // ================= SEND TO BACKEND =================
 function sendToBackend(payload) {
     const status = document.getElementById("formStatus");
-    status.innerText = "Submitting... Please wait for the submission to be completed    ";
+    status.innerText = "Submitting... Please wait.";
 
     fetch(API_URL, {
         method: "POST",
