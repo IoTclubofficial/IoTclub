@@ -200,7 +200,7 @@ function closeScanner() {
 }
 
 // ================= EFFECTS =================
-let text = "IOTIFY";
+let text = "IoTIFY";
 let i = 0;
 
 function typing() {
