@@ -35,7 +35,7 @@
                 <center>Step Building</center>
             </span>
             <span>📅 April 30, 2026</span>
-            <span class="status" style="background: #8a2be2 !important; color: white; text-align: center;">🚀 Upcoming</span>
+            <span class="status" style="background: #8a2be2 !important; color: white; text-align: center;">✔ Completed</span>
         </div>
 
         <p class="desc">
@@ -44,10 +44,7 @@
             and hardware-software integration.
         </p>
 
-        <button class="register-btn" style="margin-top: 25px; padding: 15px 40px; font-weight: 600;" onclick="openPopup()">
-            Register Now
-        </button>
-
+        <!-- ONLY RULES BUTTON KEPT -->
         <button class="register-btn" style="margin-top: 15px; padding: 15px 40px; font-weight: 600; background:linear-gradient(45deg,#8a2be2,#00f7ff);" onclick="openRulesPopup()">
             Rules
         </button>
@@ -93,18 +90,6 @@
 
 </section>
 
-<!-- Register Popup -->
-<div class="modal" id="popup" style="display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); justify-content: center; align-items: center;">
-    <div class="modal-content" style="background: #111; padding: 40px; border-radius: 25px; border: 1px solid #00f7ff; text-align: center; max-width: 400px; position: relative;">
-        <span class="close-btn" onclick="closePopup()" style="position: absolute; top: 15px; right: 20px; font-size: 25px; cursor: pointer;">&times;</span>
-        <h2 style="color: #00f7ff; margin-bottom: 15px;">Ready to Innovate?</h2>
-        <p style="opacity: 0.8; margin-bottom: 25px;">Join the IoT competition and win exciting prizes. Your registration starts here!</p>
-        <button class="register-btn" onclick="window.location.href='index2.html'" style="width: 100%; padding: 12px;">
-    Proceed to Register
-</button>
-    </div>
-</div>
-
 <!-- Rules Popup -->
 <div class="modal" id="rulesPopup" style="display: none; position: fixed; z-index: 2001; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); justify-content: center; align-items: center;">
     <div class="modal-content" style="background: #111; padding: 35px; border-radius: 25px; border: 1px solid #00f7ff; text-align: center; max-width: 430px; position: relative;">
@@ -117,7 +102,6 @@
             <li style="margin-bottom:0; opacity:0.9;">• Follow instructions on the registration form for payment & upload</li>
         </ul>
 
-        <!-- UPDATED BUTTONS -->
         <div>
             <button class="register-btn" onclick="closeRulesPopup()" style="width: 48%; padding: 12px; margin-top: 18px;">Got it</button>
             <button class="register-btn" onclick="openDetails()" style="width: 48%; padding: 12px; margin-top: 18px;">View in Detail</button>
